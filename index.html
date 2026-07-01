@@ -356,7 +356,7 @@
         }
     }
 
-    // 💡 사이트 접속 시 실행되는 구역 (방문자 이메일 동적 획득)
+    // 💡 사이트 접속 시 실행되는 구역 (질문자님의 찐 외부 IP로 수정 반영)
     window.onload = function() {
         let userEmail = prompt("영화 TOP 10 리포트를 받으실 이메일 주소를 입력해주세요:", "example@naver.com");
 
@@ -368,8 +368,8 @@
                 return;
             }
 
-            // 파이썬 Flask 웹서버로 사용자가 입력한 이메일 정보를 담아 보냅니다.
-            fetch('http://localhost:5000/api/send-report', {
+            // 💡 119.66.83.22 주소의 5000번 포트에서 가동 중인 파이썬 서버로 직접 신호를 보냅니다.
+            fetch('http://119.66.83.22:5000/api/send-report', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -385,10 +385,10 @@
                 }
             })
             .catch(err => {
-                alert("파이썬 서버와 연결할 수 없습니다. 컴퓨터에서 파이썬 프로그램을 실행 상태로 유지해 주세요.");
+                alert("파이썬 서버와 연결할 수 없습니다. 컴퓨터에서 파이썬 프로그램(app.py)이 정상 작동 중인지 확인해 주세요.");
             });
         } else {
-            alert("리포트 전송 요정을 취소하셨습니다.");
+            alert("리포트 전송 요청을 취소하셨습니다.");
         }
     }
 </script>
