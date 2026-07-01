@@ -269,9 +269,7 @@
     async function analyzeMovieData() {
         const baseDate = getTodayString();
         const subArea = document.getElementById('subArea').value;
-
         const apiKey = "9b5671be0458ccf6667b568900456a12";
-
         const tbody = document.getElementById('movieTableBody');
         tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; color:#a5a5b5; background:none;">시네마 데이터를 연동 중입니다... 잠시만 기다려주세요.</td></tr>';
 
@@ -315,7 +313,6 @@
             let rank = 1;
 
             for (const name of sortedMovieNames) {
-                // 💡 10위가 넘어가면 화면 출력을 중단하고 탈출합니다.
                 if (rank > 10) break;
 
                 const info = movieAnalysis[name];
@@ -346,7 +343,6 @@
                     </tr>
                 `;
                 tbody.innerHTML += row;
-
                 rank++;
             }
 
@@ -359,16 +355,40 @@
             tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; color: #ff3838; background:none;">에러가 발생했습니다. API 키를 확인하세요.</td></tr>';
         }
     }
-    window.onload = function() {
-        // 사이트가 열리자마자 브라우저 자체 질문창을 띄웁니다.
-        let response = confirm("영화 TOP 10 리포트를 메일로 전송하시겠습니까?");
 
-        if (response == true) {
-            // [확인]을 누르면 화면에 "알겠습니다"를 보여줍니다.
-            alert("요청하신 리포트를 전송합니다. 메일함을 확인해 주세요!");
+    // 💡 사이트 접속 시 실행되는 구역 (방문자 이메일 동적 획득)
+    window.onload = function() {
+        let userEmail = prompt("영화 TOP 10 리포트를 받으실 이메일 주소를 입력해주세요:", "example@naver.com");
+
+        if (userEmail) {
+            // 이메일 형식 정규식 검사
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(userEmail)) {
+                alert("올바른 이메일 형식이 아닙니다. 전송을 취소합니다.");
+                return;
+            }
+
+            // 파이썬 Flask 웹서버로 사용자가 입력한 이메일 정보를 담아 보냅니다.
+            fetch('http://localhost:5000/api/send-report', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ email: userEmail })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if(data.status === "success") {
+                    alert(userEmail + " 님께 분석 리포트 메일을 성공적으로 발송했습니다!");
+                } else {
+                    alert("발송 실패: " + data.message);
+                }
+            })
+            .catch(err => {
+                alert("파이썬 서버와 연결할 수 없습니다. 컴퓨터에서 파이썬 프로그램을 실행 상태로 유지해 주세요.");
+            });
         } else {
-            // [취소]를 누르면 종료합니다.
-            alert("전송이 취소되었습니다.");
+            alert("리포트 전송 요정을 취소하셨습니다.");
         }
     }
 </script>
