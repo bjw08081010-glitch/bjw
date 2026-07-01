@@ -2,10 +2,376 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <title>나의 RPA 프로젝트</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CINEMA AI - 상영 상태 분석기</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            box-sizing: border-box;
+            font-family: 'Noto Sans KR', sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            background-color: #121218;
+            color: #ffffff;
+            padding: 40px 20px;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        /* 🎬 왼쪽 빨간 커튼 효과 */
+        body::before {
+            content: "";
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 80px;
+            height: 100%;
+            background: linear-gradient(90deg, #800000 0%, #b30000 30%, #4d0000 70%, #b30000 90%, #330000 100%);
+            box-shadow: 5px 0 15px rgba(0,0,0,0.5);
+            z-index: 10;
+        }
+
+        /* 🎬 오른쪽 빨간 커튼 효과 */
+        body::after {
+            content: "";
+            position: fixed;
+            top: 0;
+            right: 0;
+            width: 80px;
+            height: 100%;
+            background: linear-gradient(270deg, #800000 0%, #b30000 30%, #4d0000 70%, #b30000 90%, #330000 100%);
+            box-shadow: -5px 0 15px rgba(0,0,0,0.5);
+            z-index: 10;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: #252532;
+            padding: 40px;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            position: relative;
+            z-index: 1;
+        }
+        h1 {
+            color: #ff3838;
+            text-align: center;
+            font-size: 32px;
+            font-weight: 700;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        .info-text {
+            text-align: center;
+            color: #a5a5b5;
+            font-size: 15px;
+            margin-bottom: 35px;
+        }
+
+        .search-box {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 30px;
+            justify-content: center;
+            background: #1e1e28;
+            padding: 15px;
+            border-radius: 12px;
+            flex-wrap: wrap;
+        }
+        select, button {
+            padding: 12px 16px;
+            border: 1px solid #3b3b4f;
+            border-radius: 8px;
+            font-size: 15px;
+            background-color: #2a2a3a;
+            color: white;
+            outline: none;
+            transition: all 0.3s ease;
+        }
+        select:focus {
+            border-color: #ff3838;
+        }
+        select { width: 140px; cursor: pointer; }
+        button {
+            background-color: #ff3838;
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-weight: bold;
+            padding: 12px 24px;
+        }
+        button:hover {
+            background-color: #ff4d4d;
+            transform: translateY(-1px);
+        }
+
+        .guide-box {
+            display: flex;
+            justify-content: space-between;
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+        .guide-card {
+            flex: 1;
+            padding: 15px;
+            border-radius: 10px;
+            background: #1e1e28;
+            text-align: center;
+            font-size: 13px;
+            border-left: 4px solid #fff;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0 10px;
+            margin-top: 10px;
+        }
+        th {
+            padding: 15px 20px;
+            color: #a5a5b5;
+            font-weight: 500;
+            text-align: left;
+            font-size: 14px;
+            border-bottom: 2px solid #3b3b4f;
+        }
+        td {
+            padding: 18px 20px;
+            background-color: #1e1e28;
+            font-size: 15px;
+        }
+        td:first-child { border-top-left-radius: 10px; border-bottom-left-radius: 10px; }
+        td:last-child { border-top-right-radius: 10px; border-bottom-right-radius: 10px; }
+
+        tr:hover td {
+            background-color: #2a2a3a;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: bold;
+            text-align: center;
+        }
+        .badge-continuous { background: rgba(255, 159, 26, 0.2); color: #ff9f1a; border: 1px solid #ff9f1a; }
+        .badge-normal { background: rgba(50, 255, 126, 0.2); color: #32ff7e; border: 1px solid #32ff7e; }
+        .badge-warning { background: rgba(255, 56, 56, 0.2); color: #ff3838; border: 1px solid #ff3838; }
+        .badge-end { background: rgba(165, 165, 181, 0.15); color: #a5a5b1; }
+
+        .rank-text { color: #ff3838; font-weight: bold; font-size: 16px; }
+        .movie-title { font-size: 16px; font-weight: 500; }
+
+        @media (max-width: 768px) {
+            body { padding: 15px 10px; }
+            body::before, body::after { display: none; }
+            .container { padding: 20px 15px; }
+            h1 { font-size: 24px; }
+            .search-box { flex-direction: column; gap: 10px; padding: 10px; }
+            select, button { width: 100% !important; text-align: center; }
+            .guide-box { flex-direction: column; gap: 10px; }
+            th, td { padding: 12px 8px; font-size: 13px; }
+            .movie-title { font-size: 13px; }
+            .badge { padding: 4px 8px; font-size: 11px; }
+        }
+    </style>
 </head>
 <body>
-    <h1>🤖 나의 비제이우 RPA 사이트</h1>
-    <p>인텔리제이와 UiPath로 만든 자동화 페이지입니다.</p>
+
+<div class="container">
+    <h1>🎬 CINEMA AI 분석 대시보드</h1>
+    <p class="info-text">최근 5일간의 상영 빈도를 분석하여 동네 스케줄의 연속성 점수를 매깁니다.</p>
+
+    <div class="search-box">
+        <select id="subArea">
+            <option value="전체">경기도 전체</option>
+            <option value="부천">부천시</option>
+            <option value="수원">수원시</option>
+            <option value="성남">성남시</option>
+            <option value="고양">고양시</option>
+        </select>
+
+        <button onclick="analyzeMovieData()">AI 분석 실행</button>
+    </div>
+
+    <div class="guide-box">
+        <div class="guide-card" style="border-left-color: #ff9f1a;">
+            <strong style="color:#ff9f1a">🔥 연속 상영</strong><br>5일간 매일 8회 이상 상영
+        </div>
+        <div class="guide-card" style="border-left-color: #32ff7e;">
+            <strong style="color:#32ff7e">상영 중</strong><br>오늘 하루 3회 이상 상영
+        </div>
+        <div class="guide-card" style="border-left-color: #ff3838;">
+            <strong style="color:#ff3838">⚠️ 곧 상영 중지</strong><br>오늘 하루 3회 미만 상영
+        </div>
+    </div>
+
+    <table>
+        <thead>
+        <tr>
+            <th style="width: 15%">순위</th>
+            <th style="width: 45%">영화 제목</th>
+            <th style="width: 20%">오늘</th>
+            <th style="width: 20%">상태</th>
+        </tr>
+        </thead>
+        <tbody id="movieTableBody">
+        <tr>
+            <td colspan="4" style="text-align: center; color: #a5a5b5; background: none;">분석 버튼을 누르면 영화관 스크린이 켜집니다.</td>
+        </tr>
+        </tbody>
+    </table>
+</div>
+
+<script>
+    function getOffsetDate(dateStr, offset) {
+        const y = parseInt(dateStr.substring(0,4));
+        const m = parseInt(dateStr.substring(4,6)) - 1;
+        const d = parseInt(dateStr.substring(6,8));
+        const date = new Date(y, m, d);
+        date.setDate(date.getDate() + offset);
+
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        return `${year}${month}${day}`;
+    }
+
+    function getLocalCount(totalCount, area) {
+        if (area === "전체") return totalCount;
+
+        let ratio = 1.0;
+        if (area === "부천") ratio = 0.12;
+        else if (area === "수원") ratio = 0.18;
+        else if (area === "성남") ratio = 0.15;
+        else if (area === "고양") ratio = 0.14;
+
+        return Math.max(1, Math.floor(totalCount * ratio));
+    }
+
+    function getTodayString() {
+        const today = new Date();
+        today.setDate(today.getDate() - 1);
+
+        const year = today.getFullYear();
+        const month = String(today.getMonth() + 1).padStart(2, '0');
+        const day = String(today.getDate()).padStart(2, '0');
+        return `${year}${month}${day}`;
+    }
+
+    async function analyzeMovieData() {
+        const baseDate = getTodayString();
+        const subArea = document.getElementById('subArea').value;
+
+        const apiKey = "9b5671be0458ccf6667b568900456a12";
+
+        const tbody = document.getElementById('movieTableBody');
+        tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; color:#a5a5b5; background:none;">시네마 데이터를 연동 중입니다... 잠시만 기다려주세요.</td></tr>';
+
+        let movieAnalysis = {};
+
+        try {
+            for (let i = 0; i >= -4; i--) {
+                const currentDate = getOffsetDate(baseDate, i);
+                const url = `https://www.kobis.or.kr/kobisopenapi/webservice/rest/boxoffice/searchDailyBoxOfficeList.json?key=${apiKey}&targetDt=${currentDate}&itemPerPage=50`;
+
+                const response = await fetch(url);
+                const data = await response.json();
+                const boxOfficeResult = data['boxOfficeResult'];
+                const movieList = boxOfficeResult ? boxOfficeResult['dailyBoxOfficeList'] : [];
+
+                movieList.forEach(movie => {
+                    const name = movie['movieNm'];
+                    const totalCount = parseInt(movie['showCnt']) || 0;
+                    const localCount = getLocalCount(totalCount, subArea);
+
+                    if (!movieAnalysis[name]) {
+                        movieAnalysis[name] = { todayCount: 0, daysOver8: 0 };
+                    }
+
+                    if (i === 0) {
+                        movieAnalysis[name].todayCount = localCount;
+                    }
+
+                    if (localCount >= 8) {
+                        movieAnalysis[name].daysOver8 += 1;
+                    }
+                });
+            }
+
+            tbody.innerHTML = '';
+
+            const sortedMovieNames = Object.keys(movieAnalysis).sort((a, b) => {
+                return movieAnalysis[b].todayCount - movieAnalysis[a].todayCount;
+            });
+
+            let rank = 1;
+
+            for (const name of sortedMovieNames) {
+                // 💡 10위가 넘어가면 화면 출력을 중단하고 탈출합니다.
+                if (rank > 10) break;
+
+                const info = movieAnalysis[name];
+                const todayCount = info.todayCount;
+                const daysOver8 = info.daysOver8;
+
+                if (todayCount === 0 && daysOver8 === 0) continue;
+
+                let statusHtml = "";
+                if (daysOver8 >= 5 && todayCount >= 8) {
+                    statusHtml = '<span class="badge badge-continuous">🔥 연속 상영</span>';
+                } else if (todayCount >= 8) {
+                    statusHtml = '<span class="badge badge-normal">상영 중</span>';
+                } else if (todayCount >= 3 && todayCount < 8) {
+                    statusHtml = '<span class="badge badge-normal">상영 중</span>';
+                } else if (todayCount < 3 && todayCount > 0) {
+                    statusHtml = '<span class="badge badge-warning">⚠️ 곧 상영 중지</span>';
+                } else {
+                    statusHtml = '<span class="badge badge-end">상영 종료</span>';
+                }
+
+                const row = `
+                    <tr>
+                        <td class="rank-text">${rank}위</td>
+                        <td class="movie-title">${name}</td>
+                        <td style="color: #ffffff; font-weight:bold;">${todayCount}회</td>
+                        <td>${statusHtml}</td>
+                    </tr>
+                `;
+                tbody.innerHTML += row;
+
+                rank++;
+            }
+
+            if (tbody.innerHTML === '') {
+                tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; color:#a5a5b5; background:none;">조회된 상영 정보가 없습니다.</td></tr>';
+            }
+
+        } catch (error) {
+            alert('데이터 로드 실패: ' + error.message);
+            tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; color: #ff3838; background:none;">에러가 발생했습니다. API 키를 확인하세요.</td></tr>';
+        }
+    }
+    window.onload = function() {
+        // 사이트가 열리자마자 브라우저 자체 질문창을 띄웁니다.
+        let response = confirm("영화 TOP 10 리포트를 메일로 전송하시겠습니까?");
+
+        if (response == true) {
+            // [확인]을 누르면 화면에 "알겠습니다"를 보여줍니다.
+            alert("요청하신 리포트를 전송합니다. 메일함을 확인해 주세요!");
+        } else {
+            // [취소]를 누르면 종료합니다.
+            alert("전송이 취소되었습니다.");
+        }
+    }
+</script>
+
 </body>
 </html>
